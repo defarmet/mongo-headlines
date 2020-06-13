@@ -12,10 +12,12 @@ var Article = new Schema({
 		required: true,
 		unique: true
 	},
-	comments: {
-		type: Schema.Types.ObjectId,
-		ref: "Comments"
-	}
+	comments: [
+		{
+			type: Schema.Types.ObjectId,
+			ref: "Comment"
+		}
+	]
 });
 
 module.exports = mongoose.model("Article", Article);
