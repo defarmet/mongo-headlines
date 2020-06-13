@@ -14,7 +14,7 @@ app.use(express.static("public"));
 
 mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/mongoHeadlines", {useNewUrlParser: true});
 
-app.get("/articles", function(req, res)
+app.get("/scrape", function(req, res)
 {
 	axios.get("https://www.oann.com").then(function(response)
 	{
@@ -34,15 +34,18 @@ app.get("/articles", function(req, res)
 			});
 		});
 
-		console.log("SCRAPE COMPLETE");
+		res.send("SCRAPE COMPLETE");
+	});
+});
 
-		db.Article.find().then(function(articles)
-		{
-			res.json(articles);
-		}).catch(function(err)
-		{
-			res.json(err);
-		});
+app.get("/articles", function(req, res)
+{
+	db.Article.find().then(function(articles)
+	{
+		res.json(articles);
+	}).catch(function(err)
+	{
+		res.json(err);
 	});
 });
 
@@ -61,7 +64,7 @@ app.get("/articles/:id", function(req, res)
 
 app.post("/articles/:id", function(req, res)
 {
-	db.Note.create(req.body).then(function(comment)
+	db.Comment.create(req.body).then(function(comment)
 	{
 		return db.Article.findOneAndUpdate({
 			_id: req.params.id
@@ -77,6 +80,19 @@ app.post("/articles/:id", function(req, res)
 	}).then(function(article)
 	{
 		res.json(article);
+	}).catch(function(err)
+	{
+		res.json(err);
+	});
+});
+
+app.delete("/comments/:id", function(req, res)
+{
+	db.Comment.remove({
+		_id: req.params.id
+	}).then(function(data)
+	{
+		res.json(data);
 	}).catch(function(err)
 	{
 		res.json(err);

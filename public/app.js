@@ -1,42 +1,59 @@
-$.getJSON("/articles", function(data)
+var current_article = "";
+
+$("#articles").text("Loading articles...");
+
+$.ajax({
+	method: "GET",
+	url: "/scrape"
+}).then(function(data)
 {
-	console.log(data);
-	data.forEach(function(value)
+	$.getJSON("/articles", function(data)
 	{
-		var id = "data-id='" + value._id + "'";
-		var title = value.title;
-		var link = value.link;
-		var article = "<p " + id + ">" + title + "<br>" + link + "</p>"
-		$("#articles").append(article);
+		$("#articles").empty();
+		data.forEach(function(value)
+		{
+			var article = $("<p>").attr("data-id", value._id);
+			article.append(value.title).append($("<br>"));
+			article.append(value.link);
+			$("#articles").append(article);
+		});
 	});
 });
 
-$(document).on("click", "p", function()
+function display_comments(id)
 {
-	$("#comments").empty();
-
 	$.ajax({
 		method: "GET",
-		url: "/articles/" + $(this).attr("data-id")
+		url: "/articles/" + id
 	}).then(function(data)
 	{
 		console.log(data);
+		$("#comments").empty();
+		current_article = id;
 
-		$("#comments").append("<h2>" + data.title + "</h2>");
-		var comment = "<textarea id='comment' name='body'></textarea>";
+		$("#comments").append($("<h3>").text(data.title));
+		var comment = $("<textarea>").attr("id", "comment");
+		comment.attr("name", "body").addClass("w-100");
 		$("#comments").append(comment);
-		var button = "<button class='btn' id='submit' data-id='"
-		button += data._id + "' >Submit</button>"
-		var button = $("<button>").addClass("btn").attr("id", "submit");
-		button.attr("data-id", data._id).text("Submit");
-		$("#comments").append(button);
+		var button = $("<button>").addClass("btn btn-primary");
+		button.attr("id", "submit").attr("data-id", data._id);
+		button.text("Submit");
+		$("#comments").append(button).append("<br><br><br>");
 
 		data.comments.forEach(function(comment)
 		{
-			$("#comments").append("<br>");
-			$("#comments").append("<p>" + comment.body + "</p>");
+			var del = $("<button>").attr("data-id", comment._id);
+			del.addClass("btn btn-danger btn-sm float-left")
+			del.text("X");
+			$("#comments").append(del);
+			$("#comments").append($("<p>").text(comment.body));
 		});
 	});
+}
+
+$(document).on("click", "p", function()
+{
+	display_comments($(this).attr("data-id"));
 });
 
 $(document).on("click", "#submit", function()
@@ -49,8 +66,17 @@ $(document).on("click", "#submit", function()
 		}
 	}).then(function(data)
 	{
-		console.log(data);
+		display_comments(data._id);
 	});
+});
 
-	$("#comment").val("");
+$(document).on("click", ".btn-danger", function()
+{
+	$.ajax({
+		method: "DELETE",
+		url: "/comments/" + $(this).attr("data-id")
+	}).then(function(data)
+	{
+		display_comments(current_article);
+	});
 });
